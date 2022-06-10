@@ -1,4 +1,5 @@
 # Learn Computer Vision with Streamlit
+
 [Try the Online Demo](https://learn-computer-vision.herokuapp.com/)
 
 A compilation of Computer Vision algorithms visualized within a Streamlit web-app.

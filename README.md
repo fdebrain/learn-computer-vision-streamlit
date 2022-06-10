@@ -18,9 +18,9 @@ Poetry
 
 ## Upcoming algorithms
 
-[x] Feature Extraction - Hough Line Transform (10/06/2022)
-[ ] Feature Extraction - Hough Circle Transform
-[ ] Feature Extraction - Edge Detection
-[ ] Feature Extraction - Corner Detection
-[ ] Feature Extraction - Feature Detection & Matching
-[ ] Image Processing - Fourier Transform
+- [x] Feature Extraction - Hough Line Transform (10/06/2022)
+- [ ] Feature Extraction - Hough Circle Transform
+- [ ] Feature Extraction - Edge Detection
+- [ ] Feature Extraction - Corner Detection
+- [ ] Feature Extraction - Feature Detection & Matching
+- [ ] Image Processing - Fourier Transform

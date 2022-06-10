@@ -17,10 +17,11 @@ def compute_hough_lines_accumulator(
     width = img_bin.shape[0]
     height = img_bin.shape[1]
     diag_len = np.sqrt(width**2 + height**2)
+    eps = 1e-5
 
     # Compute lookup tables
-    thetas = np.arange(0, 1.01 * np.pi, theta_res)
-    rhos = np.arange(-diag_len, 1.01 * diag_len, rho_res)
+    thetas = np.arange(0, np.pi + eps, theta_res)
+    rhos = np.arange(-diag_len, diag_len + eps, rho_res)
     cos_t = np.cos(thetas)
     sin_t = np.sin(thetas)
 

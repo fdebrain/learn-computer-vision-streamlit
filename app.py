@@ -87,3 +87,14 @@ if url:
     st.text(final_img.shape)
     st.image(final_img)
     st.text(f"Found {len(lines)} lines")
+
+    st.header("References")
+    st.write(
+        "[Towards Data Science - Lines Detection with Hough Transform](https://towardsdatascience.com/lines-detection-with-hough-transform-84020b3b1549)"
+    )
+    st.write(
+        "[Alyssa Quek - Understanding Hough Transform With Python](https://alyssaq.github.io/2014/understanding-hough-transform/)"
+    )
+    st.write(
+        "[Moonbooks - Implementing a simple python code to detect straight lines using Hough transform](https://moonbooks.org/Articles/Implementing-a-simple-python-code-to-detect-straight-lines-using-Hough-transform/)"
+    )

@@ -1,0 +1,5 @@
+pandas
+numpy
+streamlit
+opencv-python
+scipy

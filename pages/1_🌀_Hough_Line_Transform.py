@@ -1,29 +1,14 @@
 import cv2
 import numpy as np
-import requests
 import streamlit as st
 from src.houg_transform import (
     compute_hough_lines_accumulator,
     compute_hough_lines_list,
     compute_hough_lines_overlay,
 )
+from src.utils import get_image_from_url, load_sample_img, normalize
 
 IMG_PATH = "./img"
-SAMPLE_IMG_URL = "https://live.staticflickr.com/8476/8098572022_7d129c67ed_b.jpg"
-
-
-def get_image_from_url(url: str):
-    print(f"Load image from URL: {url}")
-    response = requests.get(url)
-    array = np.frombuffer(response.content, dtype=np.uint8)
-    img = cv2.imdecode(array, flags=1)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    st.session_state["img"] = img
-
-
-def load_sample_img():
-    print("Load sample image")
-    get_image_from_url(SAMPLE_IMG_URL)
 
 
 def smooth_image(img, kernel_size):
@@ -76,7 +61,7 @@ if st.session_state["img"] is not None:
 
     # Apply Hough Transform https://docs.opencv.org/4.x/d6/d10/tutorial_py_houghlines.html
     st.header("Hough Line Transform")
-    rho_res = st.slider("Rho Resolution [px]", 1, 10, value=2)
+    rho_res = st.slider("Rho Resolution [px]", 1, 10, value=1)
     theta_res_slider = st.slider("Theta Resolution [°]", 1, 10, value=1)
     theta_res = theta_res_slider * np.pi / 180.0  # resolution in range [0, 180°]
 
@@ -94,10 +79,10 @@ if st.session_state["img"] is not None:
 
     if show_accumulator := st.checkbox("Display accumulator"):
         st.text(f"Accumulator shape: {accumulator.shape}")
-        st.image(accumulator / accumulator.max())
+        st.image(normalize(accumulator))
 
     # Display detected lines
-    line_thickness = rho_res = st.slider("Line thickness [px]", 1, 10, value=3)
+    line_thickness = rho_res = st.slider("Line thickness [px]", 1, 10, value=2)
     final_img = compute_hough_lines_overlay(img, lines, line_thickness)
     st.text(final_img.shape)
     st.image(final_img)

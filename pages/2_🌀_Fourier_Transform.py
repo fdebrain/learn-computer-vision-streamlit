@@ -26,12 +26,14 @@ if st.session_state["img"] is not None:
     st.image(st.session_state["img"])
 
     # Compute 2D Fourier Transform
+    st.header("2D Fourier Transform")
     fshift, magnitude_spectrum = compute_fft(img)
     st.text(f"Image shape: {magnitude_spectrum.shape}")
     st.text(f"{magnitude_spectrum.min()} | {magnitude_spectrum.max()}")
     st.image(normalize(magnitude_spectrum), channels="gray")
 
     # Select ROI in Fourier space
+    st.header("2D Fourier Transform - Region of Interest")
     x_middle = magnitude_spectrum.shape[1] // 2
     y_middle = magnitude_spectrum.shape[0] // 2
     x_max = magnitude_spectrum.shape[1]
@@ -60,6 +62,7 @@ if st.session_state["img"] is not None:
     st.image(normalize(magnitude_spectrum_roi))
 
     # Compute reconstructed image
+    st.header("Image Reconstruction")
     reconstructed_img = compute_inverse_fft(fshift_roi)
     st.text(reconstructed_img.shape)
     st.image(normalize(reconstructed_img))

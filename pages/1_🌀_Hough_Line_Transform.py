@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 import requests
 import streamlit as st
-
 from src.houg_transform import (
     compute_hough_lines_accumulator,
     compute_hough_lines_list,

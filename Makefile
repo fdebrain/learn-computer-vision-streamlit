@@ -4,4 +4,4 @@ install:
 	poetry install
 
 run:
-	streamlit run app.py
+	streamlit run 0_📷_Introduction.py

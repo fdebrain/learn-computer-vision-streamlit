@@ -18,11 +18,11 @@ Poetry
 
 **Run Streamlit app:** `make run` (localhost:8501)
 
-## Upcoming algorithms
+## Upcoming Algorithms
 
 - [x] Feature Extraction - Hough Line Transform (10/06/2022)
+- [x] Image Processing - Fourier Transform (11/06/2022)
 - [ ] Feature Extraction - Hough Circle Transform
 - [ ] Feature Extraction - Edge Detection
 - [ ] Feature Extraction - Corner Detection
 - [ ] Feature Extraction - Feature Detection & Matching
-- [ ] Image Processing - Fourier Transform

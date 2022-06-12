@@ -22,7 +22,7 @@ Poetry
 
 - [x] Feature Extraction - Hough Line Transform (10/06/2022)
 - [x] Image Processing - Fourier Transform (11/06/2022)
-- [ ] Feature Extraction - Hough Circle Transform
+- [x] Feature Extraction - Hough Circle Transform (12/06/2022)
 - [ ] Feature Extraction - Edge Detection
 - [ ] Feature Extraction - Corner Detection
 - [ ] Feature Extraction - Feature Detection & Matching

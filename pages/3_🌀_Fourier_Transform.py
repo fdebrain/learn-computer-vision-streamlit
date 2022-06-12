@@ -1,10 +1,12 @@
 import numpy as np
 import streamlit as st
-
-IMG_PATH = "./img"
-
 from src.fourier_transform import compute_fft, compute_inverse_fft
 from src.utils import get_image_from_url, load_sample_img, normalize
+
+st.session_state[
+    "sample_url"
+] = "https://live.staticflickr.com/8476/8098572022_7d129c67ed_b.jpg"
+
 
 st.title("Filtering an image with Fourier Transform")
 

@@ -1,14 +1,12 @@
 import cv2
 import numpy as np
 import streamlit as st
-from src.hough_transform import (
-    compute_hough_lines_accumulator,
-    compute_hough_lines_list,
-    compute_hough_lines_overlay,
-)
+from src.hough_transform import compute_hough_lines, overlay_hough_lines
 from src.utils import get_image_from_url, load_sample_img, normalize
 
-IMG_PATH = "./img"
+st.session_state[
+    "sample_url"
+] = "https://live.staticflickr.com/8476/8098572022_7d129c67ed_b.jpg"
 
 
 def smooth_image(img, kernel_size):
@@ -20,7 +18,7 @@ def smooth_image(img, kernel_size):
     )
 
 
-st.title("Detecting Lines with Hough Line Transform")
+st.title("Detecting Lines with Hough Transform")
 
 # Input image
 if "img" not in st.session_state:
@@ -64,13 +62,11 @@ if st.session_state["img"] is not None:
     rho_res = st.slider("Rho Resolution [px]", 1, 10, value=1)
     theta_res_slider = st.slider("Theta Resolution [°]", 1, 10, value=1)
     theta_res = theta_res_slider * np.pi / 180.0  # resolution in range [0, 180°]
-
-    accumulator = compute_hough_lines_accumulator(edges, rho_res, theta_res)
-
-    threshold_hough = st.slider("Threshold (NMS)", 1, int(accumulator.max()), value=100)
+    threshold_hough = st.slider("Threshold (NMS)", 1, 1000, value=100, step=5)
     neighborhood_size = st.slider("Neighborhood Size (NMS)", 1, 100, value=20)
-    lines = compute_hough_lines_list(
-        accumulator,
+
+    lines, accumulator = compute_hough_lines(
+        edges,
         rho_res,
         theta_res,
         threshold_hough,
@@ -83,7 +79,7 @@ if st.session_state["img"] is not None:
 
     # Display detected lines
     line_thickness = rho_res = st.slider("Line thickness [px]", 1, 10, value=2)
-    final_img = compute_hough_lines_overlay(img, lines, line_thickness)
+    final_img = overlay_hough_lines(img, lines, line_thickness)
     st.text(final_img.shape)
     st.image(final_img)
     st.text(f"Found {len(lines)} lines")

@@ -1,9 +1,8 @@
 import cv2
 import numpy as np
 import requests
+import scipy.ndimage
 import streamlit as st
-
-SAMPLE_IMG_URL = "https://live.staticflickr.com/8476/8098572022_7d129c67ed_b.jpg"
 
 
 def get_image_from_url(url: str):
@@ -17,8 +16,26 @@ def get_image_from_url(url: str):
 
 def load_sample_img():
     print("Load sample image")
-    get_image_from_url(SAMPLE_IMG_URL)
+    get_image_from_url(st.session_state["sample_url"])
 
 
-def normalize(img):
+def normalize(img: np.ndarray):
     return (img - img.min()) / (img.max() - img.min())
+
+
+def nms(matrix: np.ndarray, threshold: int, neighborhood_size: int):
+    data_max = scipy.ndimage.maximum_filter(matrix, neighborhood_size)
+    maxima = matrix == data_max
+
+    data_min = scipy.ndimage.minimum_filter(matrix, neighborhood_size)
+    diff = (data_max - data_min) > threshold
+    maxima[diff == 0] = 0
+    return maxima
+
+
+def find_top_k(matrix: np.ndarray, top_k: int):
+    """Returns the n largest indices from a numpy array."""
+    flat = matrix.flatten()
+    indices = np.argpartition(flat, -top_k)[-top_k:]
+    indices = indices[np.argsort(-flat[indices])]
+    return np.unravel_index(indices, matrix.shape)

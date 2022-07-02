@@ -69,6 +69,10 @@ if st.session_state["img"] is not None:
     st.text(reconstructed_img.shape)
     st.image(normalize(reconstructed_img))
 
+    st.info(
+        "By inverting the mask, you can end up with an edge detector (similar to a Sobel operator)."
+    )
+
     st.text("TODO: Adapt to RGB")
 
     st.header("References")

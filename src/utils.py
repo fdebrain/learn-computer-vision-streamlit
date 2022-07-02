@@ -1,8 +1,11 @@
+from pathlib import Path
+
 import cv2
 import numpy as np
 import requests
 import scipy.ndimage
 import streamlit as st
+from pytube import YouTube
 
 
 def get_image_from_url(url: str):
@@ -39,3 +42,17 @@ def find_top_k(matrix: np.ndarray, top_k: int):
     indices = np.argpartition(flat, -top_k)[-top_k:]
     indices = indices[np.argsort(-flat[indices])]
     return np.unravel_index(indices, matrix.shape)
+
+
+def download_youtube_video(url, save_path):
+    save_path = Path(save_path)
+    if save_path.exists():
+        st.info(f"{url} is already downloaded.")
+        if not st.button("Download again?"):
+            return
+
+    save_path.parent.mkdir(parents=True, exist_ok=True)
+    video = YouTube(url)
+    selected_format = video.streams.filter(file_extension="mp4").first()
+    selected_format.download(save_path.parent, filename=save_path.name)
+    print("Downloaded Youtube video locally")

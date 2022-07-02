@@ -1,5 +1,7 @@
 pandas
 numpy
 streamlit
+streamlit-webrtc
 opencv-contrib-python-headless
 scipy
+pytube

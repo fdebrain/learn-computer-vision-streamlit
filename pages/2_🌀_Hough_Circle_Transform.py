@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import pandas as pd
 import streamlit as st
 from src.hough_transform import compute_hough_circles, overlay_hough_circles
 from src.utils import get_image_from_url, load_sample_img, normalize
@@ -96,7 +97,19 @@ if st.session_state["img"] is not None:
     st.image(final_img)
     st.text(f"Found {len(circles)} circles")
 
+    # Display equation
+    st.latex("(x-a)^2 + (y-b)^2 = r^2")
+
+    # Display circle parameters
+    df = pd.DataFrame(circles, columns=["a [px]", "b [px]", "r [px]", "Supports"])
+    df = df.astype(np.int16)
+    df = df.sort_values(by=["Supports"], ascending=False)
+    st.dataframe(df, width=500)
+
     st.header("References")
     st.write(
         "[Wikipedia - Circle Hough Transform](https://en.wikipedia.org/wiki/Circle_Hough_Transform)"
+    )
+    st.write(
+        "[OpenCV - Hough Circle Transform](https://docs.opencv.org/3.4/d4/d70/tutorial_hough_circle.html)"
     )

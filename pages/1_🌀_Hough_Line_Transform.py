@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import pandas as pd
 import streamlit as st
 from src.hough_transform import compute_hough_lines, overlay_hough_lines
 from src.utils import get_image_from_url, load_sample_img, normalize
@@ -83,6 +84,19 @@ if st.session_state["img"] is not None:
     st.text(final_img.shape)
     st.image(final_img)
     st.text(f"Found {len(lines)} lines")
+
+    # Display equation
+    st.info(
+        "We use polar coordinates to avoid numerical problems in the case of vertical lines (slope tends towards infinity)."
+    )
+    st.latex("r = x\cos{\\theta} + y\sin\\theta")
+
+    # Display lines parameters
+    df = pd.DataFrame(lines, columns=["r [px]", "theta [°]", "Supports"])
+    df["theta [°]"] *= 180 / np.pi
+    df = df.astype(np.int16)
+    df = df.sort_values(by=["Supports"], ascending=False)
+    st.dataframe(df, width=300)
 
     st.header("References")
     st.write(

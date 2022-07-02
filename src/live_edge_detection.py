@@ -40,6 +40,7 @@ def create_webcam_stream():
     return webrtc_streamer(
         key="webcam",
         video_processor_factory=VideoProcessor,
+        rtc_configuration=RTC_CONFIGURATION,
         media_stream_constraints={"video": True, "audio": False},
         async_processing=True,
     )

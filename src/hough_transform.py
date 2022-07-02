@@ -45,7 +45,7 @@ def compute_hough_lines(
     # Merge similar lines
     maxima = nms(accumulator, threshold, neighborhood_size)
     lines = [
-        [accumulator[rho_idx, theta_idx], rho_bins[rho_idx], theta_bins[theta_idx]]
+        [rho_bins[rho_idx], theta_bins[theta_idx], accumulator[rho_idx, theta_idx]]
         for rho_idx, theta_idx in zip(*np.nonzero(maxima))
     ]
 
@@ -61,7 +61,7 @@ def overlay_hough_lines(
 ) -> np.ndarray:
     """Plot detected lines on top of an image."""
     eps = 1e-5
-    for count, rho, theta in lines:
+    for rho, theta, count in lines:
         # Intersection point P0
         x0 = int(rho * np.cos(theta))
         y0 = int(rho * np.sin(theta))
@@ -123,10 +123,10 @@ def compute_hough_circles(
         candidates.extend(
             list(
                 zip(
-                    counts,
                     a_bins[a_idxs],
                     b_bins[b_idxs],
                     [r] * len(a_idxs),
+                    counts,
                 )
             )
         )
@@ -137,7 +137,7 @@ def compute_hough_circles(
 
     # Repeat candidates by counts
     all_candidates = np.concatenate(
-        [np.tile(circle, (count, 1)) for count, *circle in candidates]
+        [np.tile(circle, (count, 1)) for *circle, count in candidates]
     )
 
     # Compute number of supports for a given center and radius
@@ -147,7 +147,7 @@ def compute_hough_circles(
     # Merge similar circles (center and radius)
     maxima = nms(accumulator, 1, neighborhood_size)
     circles = [
-        [accumulator[a_idx, b_idx, r_idx], a_bins[a_idx], b_bins[b_idx], radius[r_idx]]
+        [a_bins[a_idx], b_bins[b_idx], radius[r_idx], accumulator[a_idx, b_idx, r_idx]]
         for a_idx, b_idx, r_idx in zip(*np.nonzero(maxima))
     ]
 
@@ -161,7 +161,7 @@ def overlay_hough_circles(
     line_thickness: int,
 ) -> np.ndarray:
     """Plot detected circles on top of an image."""
-    for count, xc, yc, r in circles:
+    for xc, yc, r, count in circles:
         cv2.circle(
             img,
             [xc, yc],

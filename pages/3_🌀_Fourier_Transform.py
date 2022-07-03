@@ -1,7 +1,7 @@
 import numpy as np
 import streamlit as st
 from src.fourier_transform import compute_fft, compute_inverse_fft
-from src.utils import get_image_from_url, load_sample_img, normalize
+from src.utils import get_image_from_url, load_sample_img, normalize, rgb_to_gray
 
 st.session_state[
     "sample_url"
@@ -29,7 +29,8 @@ if st.session_state["img"] is not None:
 
     # Compute 2D Fourier Transform
     st.header("2D Fourier Transform")
-    fshift, magnitude_spectrum = compute_fft(img)
+    gray = rgb_to_gray(img)
+    fshift, magnitude_spectrum = compute_fft(gray)
     st.text(f"Image shape: {magnitude_spectrum.shape}")
     st.text(f"{magnitude_spectrum.min()} | {magnitude_spectrum.max()}")
     st.image(normalize(magnitude_spectrum), channels="gray")

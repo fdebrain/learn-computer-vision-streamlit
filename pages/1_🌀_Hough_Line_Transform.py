@@ -3,20 +3,17 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 from src.hough_transform import compute_hough_lines, overlay_hough_lines
-from src.utils import get_image_from_url, load_sample_img, normalize
+from src.utils import (
+    get_image_from_url,
+    load_sample_img,
+    normalize,
+    rgb_to_gray,
+    smooth_image,
+)
 
 st.session_state[
     "sample_url"
 ] = "https://live.staticflickr.com/8476/8098572022_7d129c67ed_b.jpg"
-
-
-def smooth_image(img, kernel_size):
-    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-    return (
-        gray
-        if kernel_size == 0
-        else cv2.GaussianBlur(gray, (kernel_size, kernel_size), 0)
-    )
 
 
 st.title("Detecting Lines with Hough Transform")
@@ -40,15 +37,17 @@ if st.session_state["img"] is not None:
     # Smoothing
     st.header("Gaussian Blur")
     kernel_size = st.slider("Kernel size", 1, 50, value=1, step=2)
-    img_smoothed = smooth_image(img, kernel_size)
+    gray = rgb_to_gray(img)
+    img_smoothed = smooth_image(gray, kernel_size)
     st.text(f"Image shape: {img_smoothed.shape}")
-    st.image(img_smoothed)
+    st.image(normalize(img_smoothed))
 
     # Canny Edge Detection https://docs.opencv.org/4.x/da/d22/tutorial_py_canny.html
     st.header("Canny Edge Detection")
     threshold_edge_lower = st.slider("Lower", 0, 500, value=100)
     threshold_edge_upper = st.slider("Upper", 0, 500, value=200)
     aperture_size = st.slider("Aperture size", 3, 7, value=3, step=2)
+
     edges = cv2.Canny(
         img_smoothed,
         threshold_edge_lower,
@@ -61,7 +60,13 @@ if st.session_state["img"] is not None:
     # Apply Hough Transform https://docs.opencv.org/4.x/d6/d10/tutorial_py_houghlines.html
     st.header("Hough Line Transform")
     rho_res = st.slider("Rho Resolution [px]", 1, 10, value=1)
-    theta_res_slider = st.slider("Theta Resolution [°]", 1, 10, value=1)
+    theta_res_slider = st.slider(
+        "Theta Resolution [°]",
+        min_value=0.2,
+        max_value=5.0,
+        step=0.2,
+        value=0.8,
+    )
     theta_res = theta_res_slider * np.pi / 180.0  # resolution in range [0, 180°]
     threshold_hough = st.slider("Threshold (NMS)", 1, 1000, value=100, step=5)
     neighborhood_size = st.slider("Neighborhood Size (NMS)", 1, 100, value=20)
@@ -95,7 +100,7 @@ if st.session_state["img"] is not None:
     df = pd.DataFrame(lines, columns=["r [px]", "theta [°]", "Supports"])
     df["theta [°]"] *= 180 / np.pi
     df = df.astype(np.int16)
-    df = df.sort_values(by=["Supports"], ascending=False)
+    df = df.sort_values(by=["Supports"], ascending=False).reset_index(drop=True)
     st.dataframe(df, width=300)
 
     st.header("References")

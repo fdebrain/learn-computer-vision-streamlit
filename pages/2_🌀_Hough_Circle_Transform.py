@@ -3,20 +3,11 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 from src.hough_transform import compute_hough_circles, overlay_hough_circles
-from src.utils import get_image_from_url, load_sample_img, normalize
+from src.utils import get_image_from_url, load_sample_img, normalize, smooth_image
 
 st.session_state[
     "sample_url"
 ] = "https://payload.cargocollective.com/1/8/272451/4087297/Four-Circles-white_6.jpg"
-
-
-def smooth_image(img, kernel_size):
-    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-    return (
-        gray
-        if kernel_size == 0
-        else cv2.GaussianBlur(gray, (kernel_size, kernel_size), 0)
-    )
 
 
 st.title("Detecting Circles with Hough Transform")
@@ -42,7 +33,7 @@ if st.session_state["img"] is not None:
     kernel_size = st.slider("Kernel size", 1, 50, value=1, step=2)
     img_smoothed = smooth_image(img, kernel_size)
     st.text(f"Image shape: {img_smoothed.shape}")
-    st.image(img_smoothed)
+    st.image(normalize(img_smoothed))
 
     # Canny Edge Detection https://docs.opencv.org/4.x/da/d22/tutorial_py_canny.html
     st.header("Canny Edge Detection")
@@ -103,7 +94,7 @@ if st.session_state["img"] is not None:
     # Display circle parameters
     df = pd.DataFrame(circles, columns=["a [px]", "b [px]", "r [px]", "Supports"])
     df = df.astype(np.int16)
-    df = df.sort_values(by=["Supports"], ascending=False)
+    df = df.sort_values(by=["Supports"], ascending=False).reset_index(drop=True)
     st.dataframe(df, width=500)
 
     st.header("References")

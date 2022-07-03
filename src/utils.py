@@ -13,13 +13,27 @@ def get_image_from_url(url: str):
     response = requests.get(url)
     array = np.frombuffer(response.content, dtype=np.uint8)
     img = cv2.imdecode(array, flags=1)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     st.session_state["img"] = img
 
 
 def load_sample_img():
     print("Load sample image")
     get_image_from_url(st.session_state["sample_url"])
+
+
+def rgb_to_gray(img):
+    w_r = 0.299
+    w_g = 0.587
+    w_b = 0.114
+    return img.dot([w_r, w_g, w_b])
+
+
+def smooth_image(img, kernel_size):
+    return (
+        img
+        if kernel_size == 0
+        else cv2.GaussianBlur(img, (kernel_size, kernel_size), 0).astype(np.uint8)
+    )
 
 
 def normalize(img: np.ndarray):

@@ -41,12 +41,16 @@ def normalize(img: np.ndarray):
 
 
 def nms(matrix: np.ndarray, threshold: int, neighborhood_size: int):
+    # Find maxima and minima neighborhood in a sparse matrix with several peaks
     data_max = scipy.ndimage.maximum_filter(matrix, neighborhood_size)
+    data_min = scipy.ndimage.minimum_filter(matrix, neighborhood_size)
+
+    # Find regions outside of maxima neighborhood or at the maxima pixel
     maxima = matrix == data_max
 
-    data_min = scipy.ndimage.minimum_filter(matrix, neighborhood_size)
-    diff = (data_max - data_min) > threshold
-    maxima[diff == 0] = 0
+    # Discard region outside of maxima neighborhood to be left with maxima pixels
+    filt = (data_max - data_min) <= threshold
+    maxima[filt] = 0
     return maxima
 
 

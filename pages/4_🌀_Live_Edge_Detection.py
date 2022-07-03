@@ -59,5 +59,8 @@ with contextlib.suppress(Exception):
         )
 st.header("References")
 st.write(
+    "[Blog Post by whitphx - Developing web-based real-time video/audio processing apps quickly with Streamlit](https://www.whitphx.info/posts/20211231-streamlit-webrtc-video-app-tutorial/)"
+)
+st.write(
     "[Github - whitphx/streamlit-webrtc](https://github.com/whitphx/streamlit-webrtc/blob/0b143be13ec71c3339e4a1917aab8d4fd7dd333f/app.py#L415)"
 )

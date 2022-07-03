@@ -24,6 +24,6 @@ Poetry
 - [x] Image Processing - Fourier Transform (11/06/2022)
 - [x] Feature Extraction - Hough Circle Transform (12/06/2022)
 - [x] Feature Extraction - Live Edge Detection (02/07/2022)
-- [ ] Feature Extraction - Corner Detection
+- [x] Feature Extraction - Harris Corner Detection (02/07/2022)
 - [ ] Feature Extraction - Feature Detection & Matching
 - [ ] Counting Repetitions in Videos

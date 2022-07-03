@@ -2,7 +2,6 @@ from pathlib import Path
 
 import av
 import cv2
-import streamlit as st
 from aiortc.contrib.media import MediaPlayer
 from streamlit_webrtc import RTCConfiguration, WebRtcMode, webrtc_streamer
 

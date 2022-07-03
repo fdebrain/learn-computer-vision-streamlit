@@ -26,3 +26,4 @@ Poetry
 - [x] Feature Extraction - Live Edge Detection (02/07/2022)
 - [ ] Feature Extraction - Corner Detection
 - [ ] Feature Extraction - Feature Detection & Matching
+- [ ] Counting Repetitions in Videos

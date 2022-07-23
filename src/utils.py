@@ -5,6 +5,7 @@ import numpy as np
 import requests
 import scipy.ndimage
 import streamlit as st
+from PIL import ImageColor
 from pytube import YouTube
 
 
@@ -76,3 +77,7 @@ def download_youtube_video(url, save_path):
     selected_format = video.streams.filter(file_extension="mp4").first()
     selected_format.download(save_path.parent, filename=save_path.name)
     print("Downloaded Youtube video locally")
+
+
+def color_hex_to_rgb(hex):
+    return ImageColor.getcolor(hex, "RGB")

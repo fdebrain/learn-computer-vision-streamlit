@@ -25,5 +25,7 @@ Poetry
 - [x] Feature Extraction - Hough Circle Transform (12/06/2022)
 - [x] Feature Extraction - Live Edge Detection (02/07/2022)
 - [x] Feature Extraction - Harris Corner Detection (02/07/2022)
-- [ ] Feature Extraction - Feature Detection & Matching
+- [x] Feature Extraction - Feature Detection & Matching (23/07/2022)
+- [ ] Feature Extraction - ORB Feature Detection from scratch
+- [ ] Feature Extraction - LoFTR Feature Detection
 - [ ] Counting Repetitions in Videos

@@ -13,12 +13,14 @@ def get_image_from_url(url: str):
     response = requests.get(url)
     array = np.frombuffer(response.content, dtype=np.uint8)
     img = cv2.imdecode(array, flags=1)
-    st.session_state["img"] = img
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    return img
 
 
 def load_sample_img():
     print("Load sample image")
-    get_image_from_url(st.session_state["sample_url"])
+    img = get_image_from_url(st.session_state["sample_url"])
+    st.session_state["img"] = img
 
 
 def rgb_to_gray(img):

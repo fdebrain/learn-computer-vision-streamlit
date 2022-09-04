@@ -1,19 +1,28 @@
 import numpy as np
 import streamlit as st
+
 from src.fourier_transform import compute_fft, compute_inverse_fft
-from src.utils import get_image_from_url, load_sample_img, normalize, rgb_to_gray
-
-st.session_state[
-    "sample_url"
-] = "https://live.staticflickr.com/8476/8098572022_7d129c67ed_b.jpg"
-
+from src.utils import (
+    get_image_from_url,
+    init_session_state,
+    load_sample_img,
+    normalize,
+    rgb_to_gray,
+)
 
 st.title("Filtering an image with Fourier Transform")
 
-# Input image
-if "img" not in st.session_state:
-    st.session_state["img"] = None
+# Session state
+if st.session_state.get("page_name") != "fourier_transform":
+    init_session_state(
+        state={
+            "page_name": "fourier_transform",
+            "img": None,
+            "sample_url": "https://live.staticflickr.com/8476/8098572022_7d129c67ed_b.jpg",
+        }
+    )
 
+# Load image
 if url := st.text_input("Enter an image URL"):
     get_image_from_url(url)
 st.markdown("**OR**")
@@ -21,7 +30,6 @@ st.button(label="Try a sample image", on_click=load_sample_img)
 
 
 if st.session_state["img"] is not None:
-    # Load image
     st.header("Original image")
     img = st.session_state["img"].copy()
     st.text(f"Image shape: {img.shape}")
@@ -76,10 +84,10 @@ if st.session_state["img"] is not None:
 
     st.text("TODO: Adapt to RGB")
 
-    st.header("References")
-    st.write(
-        "[Image Processing with Python - Application of Fourier Transformation](https://towardsdatascience.com/image-processing-with-python-application-of-fourier-transformation-5a8584dc175b)"
-    )
-    st.write(
-        "[Image Transforms in OpenCV - Fourier Transform](https://opencv24-python-tutorials.readthedocs.io/en/latest/py_tutorials/py_imgproc/py_transforms/py_fourier_transform/py_fourier_transform.html)"
-    )
+st.header("References")
+st.write(
+    "[Image Processing with Python - Application of Fourier Transformation](https://towardsdatascience.com/image-processing-with-python-application-of-fourier-transformation-5a8584dc175b)"
+)
+st.write(
+    "[Image Transforms in OpenCV - Fourier Transform](https://opencv24-python-tutorials.readthedocs.io/en/latest/py_tutorials/py_imgproc/py_transforms/py_fourier_transform/py_fourier_transform.html)"
+)

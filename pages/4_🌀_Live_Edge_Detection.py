@@ -2,14 +2,16 @@ import contextlib
 from pathlib import Path
 
 import streamlit as st
+
 from src.live_edge_detection import (
-    SAVE_PATH,
+    VideoProcessorEdgeDetection,
     create_local_video_stream,
     create_webcam_stream,
 )
 from src.utils import download_youtube_video
 
 SAVE_DIR = Path(__file__).parent.parent / "data"
+SAVE_PATH = SAVE_DIR / "video.mp4"
 MEDIA_SOURCES = ["Webcam", "Youtube"]
 
 st.title("Live Edge Detection")
@@ -21,22 +23,20 @@ selected_source = st.radio(
     key="radio",
 )
 
-
 # Play video stream
 if selected_source == "Webcam":
-    ctx = create_webcam_stream()
-else:
-    url = st.text_input(
-        "Enter an image URL",
-        value="https://www.youtube.com/watch?v=rYrdiQckGhw&ab_channel=GoExperimental",
+    ctx = create_webcam_stream(processor=VideoProcessorEdgeDetection)
+elif url := st.text_input(
+    "Enter an image URL",
+    value="https://www.youtube.com/watch?v=rYrdiQckGhw&ab_channel=GoExperimental",
+):
+    with st.spinner(text="Downloading..."):
+        download_youtube_video(url, SAVE_PATH)
+
+    ctx = create_local_video_stream(
+        processor=VideoProcessorEdgeDetection,
+        filepath=str(SAVE_PATH),
     )
-    st.session_state.local_file_path = SAVE_DIR / "data/youtube.mp4"
-
-    if url:
-        with st.spinner(text="Downloading..."):
-            download_youtube_video(url, SAVE_PATH)
-
-        ctx = create_local_video_stream()
 
 # Use interactive widgets
 with contextlib.suppress(Exception):

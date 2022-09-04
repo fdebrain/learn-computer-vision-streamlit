@@ -2,27 +2,35 @@ import cv2
 import numpy as np
 import pandas as pd
 import streamlit as st
+
 from src.hough_transform import compute_hough_circles, overlay_hough_circles
-from src.utils import get_image_from_url, load_sample_img, normalize, smooth_image
-
-st.session_state[
-    "sample_url"
-] = "https://payload.cargocollective.com/1/8/272451/4087297/Four-Circles-white_6.jpg"
-
+from src.utils import (
+    get_image_from_url,
+    init_session_state,
+    load_sample_img,
+    normalize,
+    smooth_image,
+)
 
 st.title("Detecting Circles with Hough Transform")
 
-# Input image
-if "img" not in st.session_state:
-    st.session_state["img"] = None
+# Session state
+if st.session_state.get("page_name") != "hough_circle":
+    init_session_state(
+        state={
+            "page_name": "hough_circle",
+            "img": None,
+            "sample_url": "https://payload.cargocollective.com/1/8/272451/4087297/Four-Circles-white_6.jpg",
+        }
+    )
 
+# Load image
 if url := st.text_input("Enter an image URL"):
     get_image_from_url(url)
 st.markdown("**OR**")
 st.button(label="Try a sample image", on_click=load_sample_img)
 
 if st.session_state["img"] is not None:
-    # Load image
     st.header("Original image")
     img = st.session_state["img"].copy()
     st.text(f"Image shape: {img.shape}")

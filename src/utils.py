@@ -9,6 +9,11 @@ from PIL import ImageColor
 from pytube import YouTube
 
 
+def init_session_state(state: dict):
+    for k, v in state.items():
+        st.session_state[k] = v
+
+
 def get_image_from_url(url: str):
     print(f"Load image from URL: {url}")
     response = requests.get(url)

@@ -2,33 +2,36 @@ import cv2
 import numpy as np
 import pandas as pd
 import streamlit as st
+
 from src.hough_transform import compute_hough_lines, overlay_hough_lines
 from src.utils import (
     get_image_from_url,
+    init_session_state,
     load_sample_img,
     normalize,
     rgb_to_gray,
     smooth_image,
 )
 
-st.session_state[
-    "sample_url"
-] = "https://live.staticflickr.com/8476/8098572022_7d129c67ed_b.jpg"
-
-
 st.title("Detecting Lines with Hough Transform")
 
-# Input image
-if "img" not in st.session_state:
-    st.session_state["img"] = None
+# Session state
+if st.session_state.get("page_name") != "hough_line":
+    init_session_state(
+        state={
+            "page_name": "hough_line",
+            "img": None,
+            "sample_url": "https://live.staticflickr.com/8476/8098572022_7d129c67ed_b.jpg",
+        }
+    )
 
+# Load image
 if url := st.text_input("Enter an image URL"):
     get_image_from_url(url)
 st.markdown("**OR**")
 st.button(label="Try a sample image", on_click=load_sample_img)
 
 if st.session_state["img"] is not None:
-    # Load image
     st.header("Original image")
     img = st.session_state["img"].copy()
     st.text(f"Image shape: {img.shape}")

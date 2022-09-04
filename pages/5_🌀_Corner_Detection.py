@@ -1,31 +1,40 @@
 import numpy as np
 import pandas as pd
 import streamlit as st
+
 from src.corner_detection import (
     compute_harris_response_matrix,
     compute_spatial_derivative,
     overlay_detected_corners,
 )
-from src.utils import get_image_from_url, load_sample_img, nms, normalize, rgb_to_gray
-
-st.session_state[
-    "sample_url"
-] = "https://live.staticflickr.com/8476/8098572022_7d129c67ed_b.jpg"
-
+from src.utils import (
+    get_image_from_url,
+    init_session_state,
+    load_sample_img,
+    nms,
+    normalize,
+    rgb_to_gray,
+)
 
 st.title("Detecting Corners using the Harris Operator")
 
-# Input image
-if "img" not in st.session_state:
-    st.session_state["img"] = None
+# Session state
+if st.session_state.get("page_name") != "corner_detection":
+    init_session_state(
+        state={
+            "page_name": "corner_detection",
+            "img": None,
+            "sample_url": "https://live.staticflickr.com/8476/8098572022_7d129c67ed_b.jpg",
+        }
+    )
 
+# Load image
 if url := st.text_input("Enter an image URL"):
     get_image_from_url(url)
 st.markdown("**OR**")
 st.button(label="Try a sample image", on_click=load_sample_img)
 
 if st.session_state["img"] is not None:
-    # Load image
     st.header("Original image")
     img = st.session_state["img"].copy()
     st.text(f"Image shape: {img.shape}")

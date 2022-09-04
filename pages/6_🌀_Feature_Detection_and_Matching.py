@@ -1,5 +1,6 @@
 import numpy as np
 import streamlit as st
+
 from src.keypoints import (
     compute_keypoints,
     compute_matches,
@@ -7,16 +8,7 @@ from src.keypoints import (
     draw_matches,
     filter_matches,
 )
-from src.utils import color_hex_to_rgb, get_image_from_url
-
-st.session_state["sample_url_1"] = "https://freesvg.org/img/MonaLisa.png"
-
-st.session_state[
-    "sample_url_2"
-] = "https://live.staticflickr.com/703/32391645983_311037f6fd_b.jpg"
-
-
-st.title("Feature Detection and Matching")
+from src.utils import color_hex_to_rgb, get_image_from_url, init_session_state
 
 
 @st.cache
@@ -26,21 +18,27 @@ def load_sample_imgs():
     st.session_state["img2"] = get_image_from_url(st.session_state["sample_url_2"])
 
 
-# Input image
-if "img1" not in st.session_state:
-    st.session_state["img1"] = None
+st.title("Feature Detection and Matching")
 
-if "img2" not in st.session_state:
-    st.session_state["img2"] = None
+# Session state
+if st.session_state.get("page_name") != "feature_detection_and_matching":
+    init_session_state(
+        state={
+            "page_name": "feature_detection_and_matching",
+            "sample_url_1": "https://freesvg.org/img/MonaLisa.png",
+            "sample_url_2": "https://live.staticflickr.com/703/32391645983_311037f6fd_b.jpg",
+            "img1": None,
+            "img2": None,
+        }
+    )
 
+# Load images
 if url_1 := st.text_input("Enter an image URL"):
     st.session_state["img1"] = get_image_from_url(url_1)
 if url_2 := st.text_input("Enter another image URL"):
     st.session_state["img2"] = get_image_from_url(url_2)
-
 st.markdown("**OR**")
 st.button(label="Try sample images", on_click=load_sample_imgs)
-
 
 images_are_loaded = (
     st.session_state["img1"] is not None and st.session_state["img2"] is not None

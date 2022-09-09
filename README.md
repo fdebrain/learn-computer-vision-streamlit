@@ -1,12 +1,12 @@
 # Learn Computer Vision with Streamlit
 
-[Try the Online Demo](https://learn-computer-vision.herokuapp.com/)
+[Try the Online Demo](https://fdebrain-learn-computer-vision-streamlit-welcome-cpdgg9.streamlitapp.com/)
 
 A compilation of Computer Vision algorithms visualized within a Streamlit web-app.
 
 ## Requirements
 
-Python 3.8
+Python 3.9
 
 Poetry
 

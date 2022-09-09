@@ -1,4 +1,4 @@
-from pathlib import Path
+from functools import partial
 
 import av
 import cv2
@@ -8,10 +8,9 @@ from streamlit_webrtc import RTCConfiguration, WebRtcMode, webrtc_streamer
 RTC_CONFIGURATION = RTCConfiguration(
     {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
 )
-SAVE_PATH = Path(__file__).parent.parent / "data/video.mp4"
 
 
-class VideoProcessor:
+class VideoProcessorEdgeDetection:
     def __init__(self) -> None:
         self.threshold1 = 50
         self.threshold2 = 100
@@ -31,27 +30,27 @@ class VideoProcessor:
         return av.VideoFrame.from_ndarray(img, format="bgr24")
 
 
-def create_local_file_player():
-    return MediaPlayer(str(SAVE_PATH))
+def create_local_file_player(filepath: str):
+    return MediaPlayer(filepath)
 
 
-def create_webcam_stream():
+def create_webcam_stream(processor):
     return webrtc_streamer(
         key="webcam",
-        video_processor_factory=VideoProcessor,
+        video_processor_factory=processor,
         rtc_configuration=RTC_CONFIGURATION,
         media_stream_constraints={"video": True, "audio": False},
         async_processing=True,
     )
 
 
-def create_local_video_stream():
+def create_local_video_stream(processor, filepath: str):
     return webrtc_streamer(
         key="youtube",
-        video_processor_factory=VideoProcessor,
+        video_processor_factory=processor,
         rtc_configuration=RTC_CONFIGURATION,
         mode=WebRtcMode.RECVONLY,
-        player_factory=create_local_file_player,
+        player_factory=partial(create_local_file_player, filepath=filepath),
         media_stream_constraints={"video": True, "audio": True},
         async_processing=True,
     )

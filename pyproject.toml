@@ -1,0 +1,37 @@
+[tool.poetry]
+name = "learn-computer-vision-streamlit"
+version = "0.1.0"
+description = ""
+authors = ["fdebrain <12777340+fdebrain@users.noreply.github.com>"]
+
+[tool.poetry.dependencies]
+python = ">=3.8,<3.11"
+pandas = "^1.4.2"
+numpy = "^1.22.4"
+streamlit = "^1.10.0"
+opencv-python = "4.5.2.54"
+scipy = "^1.8.1"
+scikit-image = "^0.19.2"
+streamlit-webrtc = "^0.42.0"
+pytube = "^12.1.0"
+tensorflow = "^2.9.1"
+wget = "^3.2"
+youtube_dl = "^2021.12.17"
+opencv-python-headless = "^4.6.0"
+
+[tool.poetry.dev-dependencies]
+black = "^22.3.0"
+flake8 = "^4.0.1"
+isort = "^5.10.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 90
+extend-ignore = "E203"
+
+[tool.isort]
+profile = "black"
+line_length = 90

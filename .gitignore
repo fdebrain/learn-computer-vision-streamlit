@@ -1,6 +1,4 @@
 .vscode
 **/__pycache__
 scripts
-poetry.lock
-pyproject.toml
 data

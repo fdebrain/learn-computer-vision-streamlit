@@ -1,6 +1,6 @@
 # Learn Computer Vision with Streamlit
 
-[Try the Online Demo](https://fdebrain-learn-computer-vision-streamlit-welcome-cpdgg9.streamlitapp.com/)
+[Try the Online Demo](https://master-computer-vision.streamlitapp.com/)
 
 A compilation of Computer Vision algorithms visualized within a Streamlit web-app.
 

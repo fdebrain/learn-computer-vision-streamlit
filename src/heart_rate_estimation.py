@@ -105,6 +105,7 @@ def reconstructFrame(img: np.ndarray, levels: int, shape: Tuple[int]) -> np.ndar
 
 def extract_heart_rate(fft: np.ndarray, freqs: np.ndarray) -> int:
     # Compute average FFT amplitude for each slice (~frequency)
+    # TODO: Shoudn't we look at np.mag instead?
     fft_mean = [np.real(fft_slice).mean() for fft_slice in fft]
 
     # Compute frequency corresponding with highest average FFT amplitude
@@ -206,6 +207,7 @@ class VideoProcessorHREstimation:
             fft = np.fft.fft(self.videoGauss, axis=0)
 
             # Apply bandpass filter (region of interest lies around 60 bpm = 1 Hz)
+            # TODO: Switch to butterworth filter to avoid introducing artifacts
             self.freqs = np.fft.fftfreq(self.buffer_size, d=1 / self.video_frame_rate)
             mask = (self.freqs >= self.f_min) & (self.freqs <= self.f_max)
             fft[~mask] = 0
@@ -280,6 +282,7 @@ def create_webcam_stream(processor):
             "video": {  # Increments until reaching desired resolution
                 "width": {"min": VIDEO_WIDTH, "max": VIDEO_WIDTH},
                 "height": {"min": VIDEO_HEIGHT, "max": VIDEO_HEIGHT},
+                # TODO: Make it possible to go above 5Hz
                 "frameRate": {"min": VIDEO_FRAME_RATE, "max": VIDEO_FRAME_RATE},
             },
             "audio": False,

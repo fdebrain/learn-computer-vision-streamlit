@@ -26,6 +26,7 @@ Poetry
 - [x] Feature Extraction - Live Edge Detection (02/07/2022)
 - [x] Feature Extraction - Harris Corner Detection (02/07/2022)
 - [x] Feature Extraction - Feature Detection & Matching (23/07/2022)
+- [x] Heart Rate Estimation using Eulerian Magnification (12/11/2022)
 - [ ] Feature Extraction - ORB Feature Detection from scratch
 - [ ] Feature Extraction - LoFTR Feature Detection
 - [ ] Counting Repetitions in Videos

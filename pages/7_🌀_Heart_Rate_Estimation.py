@@ -1,6 +1,7 @@
 import contextlib
 from pathlib import Path
 
+import pandas as pd
 import streamlit as st
 
 from src.heart_rate_estimation import (
@@ -15,6 +16,7 @@ SAVE_PATH = SAVE_DIR / "video.mp4"
 MEDIA_SOURCES = ["Webcam", "Youtube"]
 
 st.title("Heart Rate Estimation using Eulerian Magnification")
+st.info("Note: This implementation requires a face to work.")
 
 # Select stream source
 selected_source = st.radio(
@@ -37,6 +39,7 @@ elif url := st.text_input(
         processor=VideoProcessorHREstimation,
         filepath=str(SAVE_PATH),
     )
+    status_indicator = st.empty()
 
 # Use interactive widgets
 with contextlib.suppress(Exception):
@@ -47,8 +50,16 @@ with contextlib.suppress(Exception):
             min_value=0,
             max_value=500,
             step=10,
-            value=30,
+            value=50,
         )
+
+        # TODO: Make it update every 1-2 seconds
+        data = {
+            "amplitude": ctx.video_processor.fft_mean,
+            "f": 60 * ctx.video_processor.freqs,
+        }
+        df = pd.DataFrame().from_dict(data)
+        st.line_chart(data, x="f", y="amplitude", width=200, height=200)
 
 st.header("References")
 st.write(

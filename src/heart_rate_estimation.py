@@ -1,3 +1,4 @@
+import time
 from functools import partial
 from typing import Dict, List, Tuple
 
@@ -20,16 +21,13 @@ RTC_CONFIGURATION = RTCConfiguration(
         ]
     }
 )
-VIDEO_HEIGHT = 360
-VIDEO_WIDTH = 600
-VIDEO_FRAME_RATE = 10
+VIDEO_HEIGHT = 540
+VIDEO_WIDTH = 900
+VIDEO_FRAME_RATE = 5
 VIDEO_CHANNELS = 3
 
 
-def relative_to_absolute_box(
-    box: Dict[str, float],
-    shape: List[int],
-) -> Dict[str, int]:
+def relative_to_absolute_box(box: Dict[str, float], shape: List[int]) -> Dict[str, int]:
     """Convert a box dictionnary from relative values (0 to 1) to absolute values (pixels).
 
     Required keys: xmin, ymin, height, width.
@@ -44,18 +42,17 @@ def relative_to_absolute_box(
 
     img_height = shape[0]
     img_width = shape[1]
+    ymin_factor = 0.7
+    height_factor = 1.2
     return {
         "xmin": int(box["xmin"] * img_width),
-        "ymin": int(box["ymin"] * img_height),
-        "height": int(box["height"] * img_height),
+        "ymin": int(box["ymin"] * ymin_factor * img_height),
+        "height": int(box["height"] * height_factor * img_height),
         "width": int(box["width"] * img_width),
     }
 
 
-def box_to_points(
-    box: Dict[str, float],
-    shape: List[int],
-) -> Tuple[Tuple[int, int]]:
+def box_to_points(box: Dict[str, float], shape: List[int]) -> Tuple[Tuple[int, int]]:
     """Compute top-left and bottom-right points given a relative box."""
     face_box = relative_to_absolute_box(box, shape)
     point1 = (face_box["xmin"], face_box["ymin"])
@@ -78,7 +75,7 @@ def get_face_box(results) -> Dict[str, float]:
 
 
 def draw_face_box(
-    img,
+    img: np.ndarray,
     point1: Tuple[int, int],
     point2: Tuple[int, int],
 ) -> None:
@@ -89,7 +86,7 @@ def draw_face_box(
     cv2.rectangle(img, point1, point2, color, thickness, lineType)
 
 
-def compute_gauss_pyramid_level(img, level):
+def compute_gauss_pyramid_level(img: np.ndarray, level: int) -> np.ndarray:
     """Compute the image at the i_th level of a Gauss pyramid.
 
     A Gauss pyramid is constructed by iterative subsampling and blurring operations.
@@ -99,14 +96,14 @@ def compute_gauss_pyramid_level(img, level):
     return pyramid[-1]
 
 
-def reconstructFrame(img, levels, shape):
+def reconstructFrame(img: np.ndarray, levels: int, shape: Tuple[int]) -> np.ndarray:
     filteredFrame = img.copy()
     for _ in range(1, levels + 1):
         filteredFrame = cv2.pyrUp(filteredFrame)
     return filteredFrame[: shape[0], : shape[1]]
 
 
-def extract_heart_rate(fft, freqs) -> int:
+def extract_heart_rate(fft: np.ndarray, freqs: np.ndarray) -> int:
     # Compute average FFT amplitude for each slice (~frequency)
     fft_mean = [np.real(fft_slice).mean() for fft_slice in fft]
 
@@ -126,11 +123,11 @@ class VideoProcessorHREstimation:
 
         # Face crop parameters
         self.face_detection = mp.solutions.face_detection.FaceDetection
-        self.crop_size = self.video_height // 7
+        self.crop_size = self.video_height // 5
 
         # Gaussian Pyramid buffer & parameters
         # TODO: Setter
-        self.level = 3  # TODO: Add slider
+        self.level = 2  # TODO: Add slider
         self.firstFrame = np.zeros((self.crop_size, self.crop_size, self.video_channels))
         self.firstGauss = compute_gauss_pyramid_level(self.firstFrame, self.level)
         self.buffer_size = 150  # TODO: Add slider
@@ -149,16 +146,27 @@ class VideoProcessorHREstimation:
         self.f_max = 4.0  # 240 bpm
 
         # Heart rate buffer & parameters
-        self.heart_rate_buffer_size = 10
+        self.heart_rate_buffer_size = 15
         self.heart_rate_buffer = np.zeros((self.heart_rate_buffer_size), dtype=np.uint8)
         self.heart_rate_buffer_index = 0
-        self.heart_rate_every_n_frames = 15
+        self.heart_rate_every_n_frames = 10
         self.ind = 0
 
         # Reconstruction
+        self.fft_mean = None
         self.alpha = 50
 
+        self.tic = 0
+        self.toc = 0
+
     def recv(self, frame):
+        # Check frame rate (5Hz)
+        self.toc = time.time()
+        delta = self.toc - self.tic
+        print(f"Took {(delta):.2f}s ({(1/delta):.1f}Hz)")
+        self.tic = self.toc
+
+        # Fetch frame
         img = frame.to_ndarray(format="bgr24")
         self.video_height = img.shape[0]
         self.video_width = img.shape[1]
@@ -198,14 +206,14 @@ class VideoProcessorHREstimation:
             fft = np.fft.fft(self.videoGauss, axis=0)
 
             # Apply bandpass filter (region of interest lies around 60 bpm = 1 Hz)
-            freqs = np.fft.fftfreq(self.buffer_size, d=1 / self.video_frame_rate)
-            mask = (freqs >= self.f_min) & (freqs <= self.f_max)
+            self.freqs = np.fft.fftfreq(self.buffer_size, d=1 / self.video_frame_rate)
+            mask = (self.freqs >= self.f_min) & (self.freqs <= self.f_max)
             fft[~mask] = 0
 
             # Estimate heart rate every heart_rate_every_n_frames
             if self.buffer_index % self.heart_rate_every_n_frames == 0:
                 self.ind += 1
-                bpm = extract_heart_rate(fft, freqs)
+                bpm = extract_heart_rate(fft, self.freqs)
 
                 # Add to heart rate buffer
                 self.heart_rate_buffer[self.heart_rate_buffer_index] = bpm
@@ -214,8 +222,8 @@ class VideoProcessorHREstimation:
                 ) % self.heart_rate_buffer_size
 
                 # TODO: Visualize FFT signal (spacial mean of last slide)
-                self.fft_mean = np.real(fft)
-                # print(self.fft_mean)
+                self.fft_mean = np.real(fft).reshape(self.buffer_size, -1).mean(axis=-1)
+                print(self.heart_rate_buffer)
 
             # Compute inverse FFT and amplify it
             filtered = np.real(np.fft.ifft(fft, axis=0))
@@ -232,19 +240,16 @@ class VideoProcessorHREstimation:
 
             # Display crop image in top-left area + show detected face
             draw_face_box(img, point1, point2)
-            print(self.crop_size, 2 * self.crop_size, outputFrame.shape, img.shape)
             img[: self.crop_size, : self.crop_size] = img_crop_resized
             img[self.crop_size : 2 * self.crop_size, : self.crop_size] = outputFrame
 
             # Display pulse
-            print(
-                f"Pulse [bpm]: {self.heart_rate_buffer} - {self.buffer_index} - {self.heart_rate_buffer_index}"
-            )
-
             if self.ind >= self.heart_rate_buffer_size:
-                message = "Pulse [bpm]: %d" % self.heart_rate_buffer.mean()
+                message = f"Pulse: {self.heart_rate_buffer.mean():.1f} bpm"
             else:
-                message = "Pulse [bpm] (noisy): %d" % self.heart_rate_buffer[self.ind - 1]
+                message = (
+                    f"Pulse: {self.heart_rate_buffer[self.ind - 1]} bpm (noisy estimate)"
+                )
             cv2.putText(
                 img,
                 message,
@@ -273,9 +278,9 @@ def create_webcam_stream(processor):
         rtc_configuration=RTC_CONFIGURATION,
         media_stream_constraints={
             "video": {  # Increments until reaching desired resolution
-                "width": VIDEO_WIDTH,
-                "height": VIDEO_HEIGHT,
-                "frameRate": VIDEO_FRAME_RATE,
+                "width": {"min": VIDEO_WIDTH, "max": VIDEO_WIDTH},
+                "height": {"min": VIDEO_HEIGHT, "max": VIDEO_HEIGHT},
+                "frameRate": {"min": VIDEO_FRAME_RATE, "max": VIDEO_FRAME_RATE},
             },
             "audio": False,
         },

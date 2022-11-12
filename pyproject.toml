@@ -18,6 +18,7 @@ wget = "^3.2"
 youtube_dl = "^2021.12.17"
 pre-commit = "^2.20.0"
 opencv-contrib-python = "^4.6.0"
+mediapipe = "^0.8.11"
 
 [tool.poetry.dev-dependencies]
 black = "^22.3.0"

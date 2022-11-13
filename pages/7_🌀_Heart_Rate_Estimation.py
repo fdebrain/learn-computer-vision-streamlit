@@ -12,6 +12,8 @@ SAVE_PATH = SAVE_DIR / "face.mp4"
 MEDIA_SOURCES = ["Webcam", "Sample"]
 
 st.title("Heart Rate Estimation using Eulerian Magnification")
+st.info("Note: WIP")
+# TODO: Improve filtering -> suspecting some artifacts due to ideal filter
 
 # Select stream source
 selected_source = st.radio(

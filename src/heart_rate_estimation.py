@@ -23,7 +23,7 @@ RTC_CONFIGURATION = RTCConfiguration(
 )
 VIDEO_HEIGHT = 540
 VIDEO_WIDTH = 900
-VIDEO_FRAME_RATE = 5
+VIDEO_FRAME_RATE = 10
 VIDEO_CHANNELS = 3
 
 
@@ -86,27 +86,35 @@ def draw_face_box(
     cv2.rectangle(img, point1, point2, color, thickness, lineType)
 
 
-def compute_gauss_pyramid_level(img: np.ndarray, level: int) -> np.ndarray:
-    """Compute the image at the i_th level of a Gauss pyramid.
+def compute_pyramid_level(
+    img: np.ndarray,
+    level: int,
+    shape: Tuple[int] = None,
+) -> np.ndarray:
+    """Compute the image at the i_th level of a Gaussian pyramid.
 
-    A Gauss pyramid is constructed by iterative subsampling and blurring operations.
+    A Gaussian pyramid is constructed by iterative subsampling and blurring operations.
     """
     pyramid = [img.copy()]  # Level 0 = initial image
     pyramid.extend(cv2.pyrDown(pyramid[-1]) for _ in range(level))
-    return pyramid[-1]
+
+    if shape:
+        return cv2.resize(pyramid[-1], (shape[1], shape[0]), interpolation=cv2.INTER_AREA)
+    else:
+        return pyramid[-1]
 
 
-def reconstructFrame(img: np.ndarray, levels: int, shape: Tuple[int]) -> np.ndarray:
-    filteredFrame = img.copy()
-    for _ in range(1, levels + 1):
-        filteredFrame = cv2.pyrUp(filteredFrame)
-    return filteredFrame[: shape[0], : shape[1]]
+def reconstruct(img: np.ndarray, level: int, shape: Tuple[int]) -> np.ndarray:
+    filtered = img.copy()
+    for _ in range(level + 1):
+        filtered = cv2.pyrUp(filtered)
+    # return filtered[: shape[0], : shape[1]]
+    return cv2.resize(filtered, (shape[1], shape[0]), interpolation=cv2.INTER_AREA)
 
 
 def extract_heart_rate(fft: np.ndarray, freqs: np.ndarray) -> int:
     # Compute average FFT amplitude for each slice (~frequency)
-    # TODO: Shoudn't we look at np.mag instead?
-    fft_mean = [np.real(fft_slice).mean() for fft_slice in fft]
+    fft_mean = [np.abs(fft_slice).mean() for fft_slice in fft]
 
     # Compute frequency corresponding with highest average FFT amplitude
     hz = freqs[np.argmax(fft_mean)]
@@ -124,101 +132,141 @@ class VideoProcessorHREstimation:
 
         # Face crop parameters
         self.face_detection = mp.solutions.face_detection.FaceDetection
-        self.crop_size = self.video_height // 5
+        self.crop_size = self.video_width // 5
 
-        # Gaussian Pyramid buffer & parameters
-        # TODO: Setter
-        self.level = 2  # TODO: Add slider
-        self.firstFrame = np.zeros((self.crop_size, self.crop_size, self.video_channels))
-        self.firstGauss = compute_gauss_pyramid_level(self.firstFrame, self.level)
-        self.buffer_size = 150  # TODO: Add slider
+        # Sequence buffer parameters
+        self._level = 2
+        self.buffer_size = self.video_frame_rate * 10  # Buffer of 10s
         self.buffer_index = 0
-        self.videoGauss = np.zeros(
-            (
-                self.buffer_size,
-                self.firstGauss.shape[0],
-                self.firstGauss.shape[1],
-                self.video_channels,
-            )
-        )
+        self.sequence_crop = None
 
-        # Frequencies lookup table & bandpass filter parameters
-        self.f_min = 1.0  # 60 bpm
-        self.f_max = 4.0  # 240 bpm
+        # Temporal bandpass filter parameters
+        self.freqs = np.fft.fftfreq(self.buffer_size, d=1 / self.video_frame_rate)
+        self._f_min = 0.8  # 48 bpm
+        self._f_max = 2.0  # 120 bpm
+        self.mask = (self.freqs >= self.f_min) & (self.freqs <= self.f_max)
 
-        # Heart rate buffer & parameters
-        self.heart_rate_buffer_size = 15
+        # Heart rate buffer parameters
+        self.heart_rate_every_n_frames = self.video_frame_rate  # 1s
+        self.heart_rate_buffer_size = 10
         self.heart_rate_buffer = np.zeros((self.heart_rate_buffer_size), dtype=np.uint8)
         self.heart_rate_buffer_index = 0
-        self.heart_rate_every_n_frames = 10
+
         self.ind = 0
 
-        # Reconstruction
+        # Magnification parameters
         self.fft_mean = None
         self.alpha = 50
 
+        # Timing
         self.tic = 0
         self.toc = 0
 
-    def recv(self, frame):
-        # Check frame rate (5Hz)
+    @property
+    def level(self):
+        return self._level
+
+    @level.setter
+    def level(self, val: int):
+        print(f"Update level: {val}")
+        self._level = val
+        self.buffer_index = 0
+        self.sequence_crop = None
+        self.ind = 0
+
+    @property
+    def f_min(self):
+        return self._f_min
+
+    @property
+    def f_max(self):
+        return self._f_max
+
+    @f_min.setter
+    def f_min(self, val: float):
+        print(f"Update f_min: {val}")
+        self._f_min = val
+        self.mask = (self.freqs >= self.f_min) & (self.freqs <= self.f_max)
+
+    @f_max.setter
+    def f_max(self, val: float):
+        print(f"Update f_max: {val}")
+        self._f_max = val
+        self.mask = (self.freqs >= self.f_min) & (self.freqs <= self.f_max)
+
+    def recv(self, frame: av.VideoFrame) -> av.VideoFrame:
+        # Check the frame rate
         self.toc = time.time()
         delta = self.toc - self.tic
         print(f"Took {(delta):.2f}s ({(1/delta):.1f}Hz)")
         self.tic = self.toc
 
-        # Fetch frame
-        img = frame.to_ndarray(format="bgr24")
+        # Fetch a new frame
+        img = frame.to_ndarray(format="bgr24")  # Type: uint8
         self.video_height = img.shape[0]
         self.video_width = img.shape[1]
+        self.crop_size = self.video_width // 5
 
+        # Left-Right flip
         if self.flip:
-            img = cv2.flip(img, 1)  # Left-Right flip
+            img = cv2.flip(img, 1)
 
         # Detect face
         with self.face_detection(
             model_selection=0,
-            min_detection_confidence=0.7,
+            min_detection_confidence=0.5,
         ) as face_detection:
             results = face_detection.process(img)
 
-        # Fetch box parameters of the first face
         if results.detections:
+            # Fetch box parameters of the first face
             face_box = get_face_box(results)
             point1, point2 = box_to_points(face_box, img.shape)
 
             # Crop face
             xmin, ymin = point1
             xmax, ymax = point2
-            img_crop = img[ymin:ymax, xmin:xmax]
-            img_crop_resized = cv2.resize(
-                img_crop,
-                (self.crop_size, self.crop_size),
-                interpolation=cv2.INTER_AREA,
-            )
+            img_crop_bgr = img[ymin:ymax, xmin:xmax]
 
-            # Fill buffer with Gaussian Pyramid level of face crop
-            self.videoGauss[self.buffer_index] = compute_gauss_pyramid_level(
-                img_crop_resized,
-                self.level,
-            )
+            # Change color space (BGR to YCrCb)
+            img_crop = cv2.cvtColor(img_crop_bgr, cv2.COLOR_BGR2YCrCb)
+
+            # Initialize sequence buffer
+            if self.sequence_crop is None:
+                # Extract desired level in Gaussian pyramid (downsampled & blurred)
+                img_crop_level = compute_pyramid_level(img_crop, self.level)
+                self.sequence_crop = img_crop_level * np.ones(
+                    (
+                        self.buffer_size,
+                        img_crop_level.shape[0],
+                        img_crop_level.shape[1],
+                        self.video_channels,
+                    )
+                )
+            else:
+                # Extract desired level in Gaussian pyramid (downsampled & blurred)
+                img_crop_level = compute_pyramid_level(
+                    img_crop, self.level, self.sequence_crop.shape[1:3]
+                )
+
+            # Fill buffer with extracted gaussian pyramid level of face crop
+            self.sequence_crop[self.buffer_index] = img_crop_level
 
             # Compute temporal FFT (capture pixel-intensity modulation frequency)
-            fft = np.fft.fft(self.videoGauss, axis=0)
-
-            # Apply bandpass filter (region of interest lies around 60 bpm = 1 Hz)
-            # TODO: Switch to butterworth filter to avoid introducing artifacts
-            self.freqs = np.fft.fftfreq(self.buffer_size, d=1 / self.video_frame_rate)
-            mask = (self.freqs >= self.f_min) & (self.freqs <= self.f_max)
-            fft[~mask] = 0
+            fft = np.fft.fft(self.sequence_crop, axis=0)
+            fft[~self.mask] = 0  # Apply ideal temporal bandpass filter
 
             # Estimate heart rate every heart_rate_every_n_frames
             if self.buffer_index % self.heart_rate_every_n_frames == 0:
-                self.ind += 1
-                bpm = extract_heart_rate(fft, self.freqs)
+                if self.ind < self.heart_rate_buffer_size:
+                    self.ind += 1
 
-                # Add to heart rate buffer
-                self.heart_rate_buffer[self.heart_rate_buffer_index] = bpm
+                # Compute heart rate estimate from filtered FFT
+                self.heart_rate_buffer[self.heart_rate_buffer_index] = extract_heart_rate(
+                    fft, self.freqs
+                )
+
+                # Increment circular heart rate buffer
                 self.heart_rate_buffer_index = (
                     self.heart_rate_buffer_index + 1
                 ) % self.heart_rate_buffer_size
@@ -227,31 +275,61 @@ class VideoProcessorHREstimation:
                 self.fft_mean = np.real(fft).reshape(self.buffer_size, -1).mean(axis=-1)
                 print(self.heart_rate_buffer)
 
-            # Compute inverse FFT and amplify it
-            filtered = np.real(np.fft.ifft(fft, axis=0))
-            filtered *= self.alpha
+            def reconstruct(img1, img2, crop_size):
+                img_raw = cv2.resize(
+                    img1,
+                    (crop_size, crop_size),
+                    interpolation=cv2.INTER_AREA,
+                )
+                img_filt = cv2.resize(
+                    img2,
+                    (crop_size, crop_size),
+                    interpolation=cv2.INTER_AREA,
+                )
+                img_magnified = img_raw + img_filt
+                return cv2.convertScaleAbs(img_magnified)
 
-            # Reconstruct latest image (filtered in frequency space)
-            filtered_crop = reconstructFrame(
-                filtered[self.buffer_index],
-                self.level,
-                shape=img_crop_resized.shape,
+            # Compute inverse FFT to filtered sequence and amplify it
+            sequence_crop_filtered = np.real(np.fft.ifft(fft, axis=0))
+            img_crop_filtered = self.alpha * sequence_crop_filtered[self.buffer_index]
+
+            # Reconstruct magnified version of current image crop
+            img_crop_magnified = reconstruct(
+                img_crop,
+                img_crop_filtered,
+                self.crop_size,
             )
-            outputFrame = img_crop_resized + filtered_crop
-            outputFrame = cv2.convertScaleAbs(outputFrame)
 
-            # Display crop image in top-left area + show detected face
+            # Convert back to RGB color space
+            img_crop_magnified_bgr = cv2.cvtColor(
+                img_crop_magnified,
+                cv2.COLOR_YCrCb2BGR,
+            )
+
+            # Show detected face + resize and display crops in top-left area
             draw_face_box(img, point1, point2)
-            img[: self.crop_size, : self.crop_size] = img_crop_resized
-            img[self.crop_size : 2 * self.crop_size, : self.crop_size] = outputFrame
+            img_crop_bgr = cv2.resize(
+                img_crop_bgr,
+                (self.crop_size, self.crop_size),
+                interpolation=cv2.INTER_AREA,
+            )
+            img_crop_magnified_bgr = cv2.resize(
+                img_crop_magnified_bgr,
+                (self.crop_size, self.crop_size),
+                interpolation=cv2.INTER_AREA,
+            )
+            img[: self.crop_size, : self.crop_size] = img_crop_bgr
+            img[
+                self.crop_size : 2 * self.crop_size, : self.crop_size
+            ] = img_crop_magnified_bgr
 
             # Display pulse
             if self.ind >= self.heart_rate_buffer_size:
-                message = f"Pulse: {self.heart_rate_buffer.mean():.1f} bpm"
+                mean_pulse = self.heart_rate_buffer.mean()
+                message = f"Pulse: {mean_pulse:.1f} bpm"
             else:
-                message = (
-                    f"Pulse: {self.heart_rate_buffer[self.ind - 1]} bpm (noisy estimate)"
-                )
+                mean_pulse = self.heart_rate_buffer[: self.ind - 1].mean()
+                message = f"Pulse: {mean_pulse:.1f} bpm (noisy estimate)"
             cv2.putText(
                 img,
                 message,
@@ -263,7 +341,7 @@ class VideoProcessorHREstimation:
                 lineType=1,
             )
 
-            # Increment circular buffer
+            # Increment circular sequence buffer
             self.buffer_index = (self.buffer_index + 1) % self.buffer_size
 
         return av.VideoFrame.from_ndarray(img, format="bgr24")
@@ -282,7 +360,6 @@ def create_webcam_stream(processor):
             "video": {  # Increments until reaching desired resolution
                 "width": {"min": VIDEO_WIDTH, "max": VIDEO_WIDTH},
                 "height": {"min": VIDEO_HEIGHT, "max": VIDEO_HEIGHT},
-                # TODO: Make it possible to go above 5Hz
                 "frameRate": {"min": VIDEO_FRAME_RATE, "max": VIDEO_FRAME_RATE},
             },
             "audio": False,

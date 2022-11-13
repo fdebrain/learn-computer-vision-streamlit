@@ -63,7 +63,7 @@ with contextlib.suppress(Exception):
 
 st.header("References")
 st.write(
-    "[Blog Post by whitphx - Developing web-based real-time video/audio processing apps quickly with Streamlit](https://www.whitphx.info/posts/20211231-streamlit-webrtc-video-app-tutorial/)"
+    "[Paper - Eulerian Video Magnification for Revealing Subtle Changes in the World](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://people.csail.mit.edu/mrub/papers/vidmag.pdf)"
 )
 st.write(
     "[Eulerian Magnification - https://github.com/brycedrennan/eulerian-magnification/)"

@@ -1,3 +1,4 @@
+from functools import partial
 from pathlib import Path
 
 import cv2
@@ -5,8 +6,27 @@ import numpy as np
 import requests
 import scipy.ndimage
 import streamlit as st
+from aiortc.contrib.media import MediaPlayer
 from PIL import ImageColor
 from pytube import YouTube
+from streamlit_webrtc import RTCConfiguration, WebRtcMode, webrtc_streamer
+
+RTC_CONFIGURATION = RTCConfiguration(
+    {
+        "iceServers": [
+            {
+                "urls": [
+                    "stun:stun.l.google.com:19302",
+                    "stun:stun1.l.google.com:19302",
+                ]
+            }
+        ]
+    }
+)
+VIDEO_HEIGHT = 360
+VIDEO_WIDTH = 600
+VIDEO_FRAME_RATE = 10
+VIDEO_CHANNELS = 3
 
 
 def init_session_state(state: dict):
@@ -86,3 +106,35 @@ def download_youtube_video(url, save_path):
 
 def color_hex_to_rgb(hex):
     return ImageColor.getcolor(hex, "RGB")
+
+
+def create_local_file_player(filepath: str):
+    return MediaPlayer(filepath)
+
+
+def create_webcam_stream(processor):
+    return webrtc_streamer(
+        key="webcam",
+        video_processor_factory=processor,
+        rtc_configuration=RTC_CONFIGURATION,
+        media_stream_constraints={
+            "video": True,  # Increments until reaching desired resolution
+            "audio": False,
+        },
+        async_processing=True,
+    )
+
+
+def create_local_video_stream(processor, filepath: str):
+    return webrtc_streamer(
+        key="youtube",
+        video_processor_factory=processor,
+        rtc_configuration=RTC_CONFIGURATION,
+        mode=WebRtcMode.RECVONLY,
+        player_factory=partial(create_local_file_player, filepath=filepath),
+        media_stream_constraints={
+            "video": True,
+            "audio": False,
+        },
+        async_processing=True,
+    )

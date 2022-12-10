@@ -28,6 +28,7 @@ Poetry
 - [x] Feature Extraction - Feature Detection & Matching (23/07/2022)
 - [x] Heart Rate Estimation using Eulerian Magnification (12/11/2022)
 - [x] Face detection (13/11/2022)
+- [x] Image Processing - Singular Value Decomposition (10/12/2022)
 - [ ] Feature Extraction - ORB Feature Detection from scratch
 - [ ] Feature Extraction - LoFTR Feature Detection
 - [ ] Counting Repetitions in Videos
